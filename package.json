@@ -1,0 +1,1 @@
+{"description":"Business-entity search: natural-language company discovery via Parallel FindAll","name":"beacon","scripts":{"start":"bun src/server.ts","test":"bun test"},"version":"1.0.0"}
