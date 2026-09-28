@@ -142,12 +142,18 @@ function paintResults(job) {
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l5 5L20 6"/></svg>
       </button>
       <div class="body">
-        <h3>${esc(c.name)}</h3>
-        ${c.description ? `<p>${esc(c.description)}</p>` : ""}
-        <div class="foot">
-          ${c.url ? `<a class="dom" href="${esc(c.url)}" target="_blank" rel="noopener">${esc(domain(c.url))} ↗</a>` : ""}
-          <span class="src">FindAll</span>
-        </div>
+        <h3 class="biz-name">${esc(c.name)}</h3>
+        ${c.description ? `<p class="biz-desc">${esc(c.description)}</p>` : ""}
+        <dl class="fields">
+          ${fieldRow("Website", c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.url)}</a>` : "", "web")}
+          ${fieldRow("Primary sector", esc(c.sector), "strong")}
+          ${fieldRow("Primary subsector", esc(c.subsector), "strong")}
+          ${fieldRow("Stage", esc(c.stage))}
+          ${fieldRow("Founded", esc(c.founded_year))}
+          ${fieldRow("Location", esc(locLine(c)))}
+          ${fieldRow("Acquisitions", esc(c.acquisitions))}
+        </dl>
+        <div class="foot"><span class="src">FindAll</span></div>
       </div>
     </article>`).join("") + `</div>`;
   body.querySelectorAll(".check").forEach((b) => b.addEventListener("click", (e) => {
@@ -167,6 +173,17 @@ function paintResults(job) {
 }
 
 function domain(u) { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } }
+
+/** One card field row: label + value on its own line. Empty values render nothing. */
+function fieldRow(label, valueHtml, cls) {
+  if (!valueHtml) return "";
+  return `<div class="frow${cls ? " " + cls : ""}"><dt>${label}</dt><dd>${valueHtml}</dd></div>`;
+}
+
+/** "Cincinnati, Ohio, United States" — only the parts FindAll reported. */
+function locLine(c) {
+  return [c.city, c.state, c.country].filter(Boolean).join(", ");
+}
 
 function paintBar(job) {
   const bar = $("#rBar");

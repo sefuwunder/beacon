@@ -18,6 +18,15 @@ export interface BeaconCompany {
   industry: string;
   location: string;
   source: "findall";
+  // Rich FindAll attributes — empty string when the entity didn't report them.
+  sector: string;
+  subsector: string;
+  stage: string;
+  founded_year: string;
+  country: string;
+  state: string;
+  city: string;
+  acquisitions: string;
 }
 
 type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
@@ -27,7 +36,10 @@ export function buildObjective(industry: string, location: string): string {
     `${location.trim()} — established businesses with a public web presence.`;
 }
 
-/** Defensive parse: non-empty name required; URL optional but must be http(s). */
+/** Defensive parse: non-empty name required; URL optional but must be http(s).
+ *  Rich attributes are read from several possible key spellings — FindAll
+ *  field naming varies, so we try snake_case, Title Case, and a nested
+ *  `attributes` object. Everything missing comes back as "". */
 export function parseEntities(j: any, industry: string, location: string, cap = FINDALL_LIMIT): BeaconCompany[] {
   const arr = Array.isArray(j?.entities) ? j.entities : [];
   const out: BeaconCompany[] = [];
@@ -47,10 +59,27 @@ export function parseEntities(j: any, industry: string, location: string, cap = 
       industry: industry.trim(),
       location: location.trim(),
       source: "findall",
+      sector: pick(e, "primary_sector", "Primary Sector", "sector", "Sector"),
+      subsector: pick(e, "primary_subsector", "Primary Subsector", "subsector", "Subsector"),
+      stage: pick(e, "stage", "Stage", "funding_stage", "Funding Stage"),
+      founded_year: pick(e, "founded_year", "Founded Year", "founded", "Founded", "founding_year"),
+      country: pick(e, "location_country", "Location Country", "country", "Country"),
+      state: pick(e, "location_state", "Location State", "state", "State"),
+      city: pick(e, "location_city", "Location City", "city", "City"),
+      acquisitions: pick(e, "acquisitions_as_acquirer", "Acquisitions As Acquirer", "acquisitions", "Acquisitions"),
     });
     if (out.length >= cap) break;
   }
   return out;
+}
+
+/** First non-empty string found under any of the given keys (or attributes.<key>). */
+function pick(e: any, ...keys: string[]): string {
+  for (const k of keys) {
+    const v = e?.[k] ?? e?.attributes?.[k];
+    if (v != null && String(v).trim()) return String(v).trim().slice(0, 120);
+  }
+  return "";
 }
 
 export async function findallSearch(

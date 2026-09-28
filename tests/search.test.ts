@@ -39,6 +39,36 @@ test("parseEntities keeps shape, drops nameless/dups, clears bad urls, caps", ()
   expect(parseEntities({}, "d", "l")).toEqual([]);
 });
 
+test("parseEntities passes through rich FindAll attributes, any key spelling", () => {
+  const cs = parseEntities({
+    entities: [{
+      name: "GFFYN Network Solutions",
+      url: "https://gffyn-network-solutions.com",
+      description: "IT services firm.",
+      "Primary Sector": "Business Services",
+      "Primary Subsector": "IT Services",
+      "Stage": "Unfunded",
+      "Founded Year": "2014",
+      "Location Country": "United States",
+      "Location State": "Ohio",
+      "Location City": "Cincinnati",
+      "Acquisitions As Acquirer": "2",
+    }, {
+      name: "Snake Case Co",
+      attributes: { primary_sector: "Retail", founded_year: "2001", location_city: "Dayton" },
+    }],
+  }, "d", "l");
+  expect(cs[0]).toMatchObject({
+    sector: "Business Services", subsector: "IT Services", stage: "Unfunded",
+    founded_year: "2014", country: "United States", state: "Ohio", city: "Cincinnati",
+    acquisitions: "2",
+  });
+  expect(cs[1].sector).toBe("Retail");
+  expect(cs[1].founded_year).toBe("2001");
+  expect(cs[1].city).toBe("Dayton");
+  expect(cs[1].stage).toBe(""); // missing attributes come back as ""
+});
+
 test("runSearchJob without a key lands failed with a clear error", async () => {
   delete process.env.PARALLEL_API_KEY;
   const id = "t-" + Math.random().toString(36).slice(2);
